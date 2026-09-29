@@ -2,7 +2,8 @@ from flask import (
     Flask,
     request,
     jsonify,
-    send_from_directory
+    send_from_directory,
+    send_file
 )
 
 from flask_cors import CORS
@@ -10,6 +11,9 @@ from flask_cors import CORS
 from pathlib import Path
 from datetime import datetime
 import uuid
+import io
+import boto3
+from botocore.exceptions import ClientError
 
 from database import (
     get_db,
@@ -39,6 +43,15 @@ app.config["UPLOAD_FOLDER"] = str(
     UPLOAD_FOLDER
 )
 
+# AWS S3 Configuration
+S3_BUCKET = "cloudnotes-437982993423"
+S3_REGION = "ap-south-1"
+S3_FOLDER = "notes"
+
+s3 = boto3.client(
+    "s3",
+    region_name=S3_REGION
+)
 
 # ==========================================
 # ALLOWED FILES
@@ -346,15 +359,17 @@ def upload_file():
         + extension
     )
 
+    # Upload PDF to Amazon S3
+    s3_key = f"{S3_FOLDER}/{stored_filename}"
 
-    save_path = (
-        UPLOAD_FOLDER
-        / stored_filename
+    s3.upload_fileobj(
+        file,
+        S3_BUCKET,
+        s3_key,
+        ExtraArgs={
+            "ContentType": "application/pdf"
+        }
     )
-
-
-    file.save(save_path)
-
 
     size_mb = round(
         file_size / (1024 * 1024),
@@ -475,16 +490,18 @@ def download_file(file_id):
         }), 404
 
 
-    return send_from_directory(
+    s3_key = f"{S3_FOLDER}/{file['stored_filename']}"
 
-        app.config["UPLOAD_FOLDER"],
+    s3_object = s3.get_object(
+        Bucket=S3_BUCKET,
+        Key=s3_key
+    )
 
-        file["stored_filename"],
-
+    return send_file(
+        io.BytesIO(s3_object["Body"].read()),
+        mimetype="application/pdf",
         as_attachment=True,
-
         download_name=file["filename"]
-
     )
 
 
@@ -543,16 +560,15 @@ def delete_file(file_id):
     connection.close()
 
 
-    file_path = (
-        UPLOAD_FOLDER
-        / stored_filename
-    )
+    s3_key = f"{S3_FOLDER}/{stored_filename}"
 
-
-    if file_path.exists():
-
-        file_path.unlink()
-
+    try:
+        s3.delete_object(
+            Bucket=S3_BUCKET,
+            Key=s3_key
+        )
+    except ClientError as e:
+        print(f"S3 delete error: {e}")
 
     return jsonify({
 
@@ -676,5 +692,5 @@ if __name__ == "__main__":
     app.run(
         host="127.0.0.1",
         port=5000,
-        debug=True
+        debug=False
     )
