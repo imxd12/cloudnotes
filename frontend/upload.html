@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CloudNotes | Upload</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- SIDEBAR -->
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-brand">
+
+                <div class="brand-icon">
+                    <i class="bi bi-cloud-fill"></i>
+                </div>
+
+                <div>
+
+                    <h2>CloudNotes</h2>
+
+                    <span>Student Portal</span>
+
+                </div>
+
+            </div>
+
+
+            <nav class="sidebar-nav">
+
+                <a href="dashboard.html" class="nav-link">
+
+                    <i class="bi bi-grid"></i>
+                    <span>Dashboard</span>
+
+                </a>
+
+                <a href="files.html" class="nav-link">
+
+                    <i class="bi bi-folder2-open"></i>
+                    <span>My Notes</span>
+
+                </a>
+
+                <a href="upload.html" class="nav-link active">
+
+                    <i class="bi bi-cloud-upload"></i>
+                    <span>Upload Notes</span>
+
+                </a>
+
+            </nav>
+
+
+            <div class="sidebar-bottom">
+
+                <button class="nav-link theme-btn" onclick="toggleTheme()">
+
+                    <i class="bi bi-moon-stars"></i>
+
+                    <span>Dark Mode</span>
+
+                </button>
+
+                <button class="nav-link logout-btn" onclick="logout()">
+
+                    <i class="bi bi-box-arrow-left"></i>
+
+                    <span>Logout</span>
+
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <main class="main-content">
+
+            <header class="topbar">
+
+                <button class="mobile-menu" onclick="toggleSidebar()">
+
+                    <i class="bi bi-list"></i>
+
+                </button>
+
+                <div>
+
+                    <h1>Upload Notes</h1>
+
+                    <p>
+                        Add a new academic document
+                    </p>
+
+                </div>
+
+                <div class="topbar-actions">
+
+                    <button class="icon-btn" onclick="toggleTheme()">
+
+                        <i class="bi bi-moon-stars"></i>
+
+                    </button>
+
+                    <div class="user-avatar">
+                        IM
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <section class="content">
+
+                <div class="upload-layout">
+
+                    <div class="form-card">
+
+                        <div class="card-header">
+
+                            <h2>Upload Document</h2>
+
+                            <p>
+                                Add information about your note.
+                            </p>
+
+                        </div>
+
+
+                        <form id="uploadForm">
+
+                            <div class="form-row">
+
+                                <div class="form-group">
+
+                                    <label>
+                                        Note Title
+                                    </label>
+
+                                    <input type="text" id="noteTitle" placeholder="e.g. Cloud Computing Unit 1"
+                                        required>
+
+                                </div>
+
+
+                                <div class="form-group">
+
+                                    <label>
+                                        Subject
+                                    </label>
+
+                                    <select id="noteSubject" required>
+
+                                        <option value="">
+                                            Select Subject
+                                        </option>
+
+                                        <option>
+                                            Cloud Computing
+                                        </option>
+
+                                        <option>
+                                            Python
+                                        </option>
+
+                                        <option>
+                                            DBMS
+                                        </option>
+
+                                        <option>
+                                            Machine Learning
+                                        </option>
+
+                                        <option>
+                                            Other
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>
+                                    Description
+                                </label>
+
+                                <textarea id="noteDescription" rows="4" placeholder="Short description..."></textarea>
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>
+                                    Select PDF
+                                </label>
+
+                                <div class="upload-zone" id="uploadZone">
+
+                                    <i class="bi bi-cloud-arrow-up"></i>
+
+                                    <h3>
+                                        Choose a file
+                                    </h3>
+
+                                    <p>
+                                        PDF files up to 10 MB
+                                    </p>
+
+                                    <input type="file" id="noteFile" accept=".pdf" required>
+
+                                </div>
+
+                                <div id="selectedFile" class="selected-file">
+
+                                </div>
+
+                            </div>
+
+
+                            <div id="uploadMessage" class="message">
+
+                            </div>
+
+
+                            <div class="form-actions">
+
+                                <a href="files.html" class="btn btn-secondary">
+
+                                    Cancel
+
+                                </a>
+
+                                <button type="submit" class="btn btn-primary">
+
+                                    <i class="bi bi-cloud-upload"></i>
+
+                                    Upload Note
+
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+
+                    <!-- INFORMATION -->
+
+                    <div class="info-card">
+
+                        <div class="info-icon">
+
+                            <i class="bi bi-cloud-check"></i>
+
+                        </div>
+
+                        <h2>Cloud Storage</h2>
+
+                        <p>
+                            Your notes will be securely stored
+                            in cloud storage.
+                        </p>
+
+                        <div class="info-list">
+
+                            <div>
+                                <i class="bi bi-check-circle"></i>
+                                PDF documents
+                            </div>
+
+                            <div>
+                                <i class="bi bi-check-circle"></i>
+                                Easy access
+                            </div>
+
+                            <div>
+                                <i class="bi bi-check-circle"></i>
+                                Secure storage
+                            </div>
+
+                            <div>
+                                <i class="bi bi-check-circle"></i>
+                                Download anytime
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <script src="js/app.js"></script>
+
+</body>
+
+</html>

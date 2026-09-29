@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CloudNotes | Dashboard</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- SIDEBAR -->
+
+        <aside class="sidebar" id="sidebar">
+
+            <div class="sidebar-brand">
+
+                <div class="brand-icon">
+                    <i class="bi bi-cloud-fill"></i>
+                </div>
+
+                <div>
+                    <h2>CloudNotes</h2>
+                    <span>Student Portal</span>
+                </div>
+
+            </div>
+
+
+            <nav class="sidebar-nav">
+
+                <a href="dashboard.html" class="nav-link active">
+                    <i class="bi bi-grid"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="files.html" class="nav-link">
+                    <i class="bi bi-folder2-open"></i>
+                    <span>My Notes</span>
+                </a>
+
+                <a href="upload.html" class="nav-link">
+                    <i class="bi bi-cloud-upload"></i>
+                    <span>Upload Notes</span>
+                </a>
+
+            </nav>
+
+
+            <div class="sidebar-bottom">
+
+                <button class="nav-link theme-btn" onclick="toggleTheme()">
+                    <i class="bi bi-moon-stars"></i>
+                    <span>Dark Mode</span>
+                </button>
+
+                <button class="nav-link logout-btn" onclick="logout()">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Logout</span>
+                </button>
+
+            </div>
+
+        </aside>
+
+
+        <!-- MAIN -->
+
+        <main class="main-content">
+
+            <!-- TOPBAR -->
+
+            <header class="topbar">
+
+                <button class="mobile-menu" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <div>
+
+                    <h1>Dashboard</h1>
+
+                    <p>
+                        Welcome back to CloudNotes 👋
+                    </p>
+
+                </div>
+
+                <div class="topbar-actions">
+
+                    <button class="icon-btn" onclick="toggleTheme()">
+                        <i class="bi bi-moon-stars"></i>
+                    </button>
+
+                    <div class="user-avatar">
+                        IM
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <!-- DASHBOARD -->
+
+            <section class="content">
+
+
+                <!-- STAT CARDS -->
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon blue">
+                            <i class="bi bi-folder-fill"></i>
+                        </div>
+
+                        <div>
+
+                            <span>Total Notes</span>
+
+                            <h2 id="totalFiles">
+                                0
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon green">
+                            <i class="bi bi-cloud-arrow-up-fill"></i>
+                        </div>
+
+                        <div>
+
+                            <span>My Uploads</span>
+
+                            <h2 id="myUploads">
+                                0
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon purple">
+                            <i class="bi bi-hdd-fill"></i>
+                        </div>
+
+                        <div>
+
+                            <span>Storage Used</span>
+
+                            <h2 id="storageUsed">
+                                0 MB
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-icon orange">
+                            <i class="bi bi-book-fill"></i>
+                        </div>
+
+                        <div>
+
+                            <span>Subjects</span>
+
+                            <h2 id="totalSubjects">
+                                0
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- QUICK ACTIONS -->
+
+                <div class="section-header">
+
+                    <div>
+
+                        <h2>Quick Actions</h2>
+
+                        <p>
+                            Manage your academic notes
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="quick-grid">
+
+                    <a href="upload.html" class="quick-card">
+
+                        <div class="quick-icon">
+                            <i class="bi bi-cloud-upload"></i>
+                        </div>
+
+                        <div>
+
+                            <h3>Upload Notes</h3>
+
+                            <p>
+                                Upload a PDF or document
+                            </p>
+
+                        </div>
+
+                        <i class="bi bi-arrow-right"></i>
+
+                    </a>
+
+
+                    <a href="files.html" class="quick-card">
+
+                        <div class="quick-icon">
+                            <i class="bi bi-folder2-open"></i>
+                        </div>
+
+                        <div>
+
+                            <h3>View Notes</h3>
+
+                            <p>
+                                Browse all available notes
+                            </p>
+
+                        </div>
+
+                        <i class="bi bi-arrow-right"></i>
+
+                    </a>
+
+                </div>
+
+
+                <!-- RECENT FILES -->
+
+                <div class="section-header">
+
+                    <div>
+
+                        <h2>Recent Notes</h2>
+
+                        <p>
+                            Recently uploaded documents
+                        </p>
+
+                    </div>
+
+                    <a href="files.html" class="view-all">
+                        View All
+                    </a>
+
+                </div>
+
+
+                <div class="table-card">
+
+                    <div class="table-responsive">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+                                    <th>File</th>
+                                    <th>Subject</th>
+                                    <th>Uploaded By</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="recentFiles">
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <script src="js/app.js"></script>
+
+</body>
+
+</html>
