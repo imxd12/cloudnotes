@@ -2,9 +2,18 @@
    CLOUDNOTES - FLASK API CLIENT
 ========================================= */
 
-
-const API_URL =
-    "http://127.0.0.1:5000";
+/*
+ * Production:
+ * Leave API_URL empty so the browser uses
+ * the same host that served the frontend.
+ *
+ * Example:
+ * http://52.66.133.0
+ *
+ * API request becomes:
+ * http://52.66.133.0/api/login
+ */
+const API_URL = "";
 
 
 /* =========================================
@@ -20,12 +29,10 @@ document.addEventListener(
                 "loginForm"
             );
 
-
         const uploadForm =
             document.getElementById(
                 "uploadForm"
             );
-
 
         const fileInput =
             document.getElementById(
@@ -194,12 +201,19 @@ async function handleLogin(event) {
 
     catch (error) {
 
+        console.error(
+            "Login error:",
+            error
+        );
+
+
         message.className =
             "message error";
 
 
         message.textContent =
-            error.message;
+            error.message ||
+            "Unable to connect to server.";
 
     }
 
@@ -224,7 +238,8 @@ function togglePassword() {
         );
 
 
-    if (!password) return;
+    if (!password)
+        return;
 
 
     if (
@@ -236,8 +251,12 @@ function togglePassword() {
             "text";
 
 
-        icon.className =
-            "bi bi-eye-slash";
+        if (icon) {
+
+            icon.className =
+                "bi bi-eye-slash";
+
+        }
 
     }
 
@@ -247,8 +266,12 @@ function togglePassword() {
             "password";
 
 
-        icon.className =
-            "bi bi-eye";
+        if (icon) {
+
+            icon.className =
+                "bi bi-eye";
+
+        }
 
     }
 
@@ -287,8 +310,11 @@ function getCurrentUser() {
     if (!user) {
 
         return {
+
             name: "Imad Khan",
+
             email: "admin@cloudnotes.com"
+
         };
 
     }
@@ -303,8 +329,11 @@ function getCurrentUser() {
     catch {
 
         return {
+
             name: "Imad Khan",
+
             email: "admin@cloudnotes.com"
+
         };
 
     }
@@ -461,7 +490,8 @@ async function renderRecentFiles() {
         );
 
 
-    if (!container) return;
+    if (!container)
+        return;
 
 
     try {
@@ -541,8 +571,8 @@ async function renderRecentFiles() {
                     <td>
 
                         ${escapeHTML(
-                    file.uploadedBy
-                )}
+                            file.uploadedBy
+                        )}
 
                     </td>
 
@@ -550,8 +580,8 @@ async function renderRecentFiles() {
                     <td>
 
                         ${formatDate(
-                    file.date
-                )}
+                            file.date
+                        )}
 
                     </td>
 
@@ -605,7 +635,8 @@ async function renderFiles() {
         );
 
 
-    if (!table) return;
+    if (!table)
+        return;
 
 
     const emptyState =
@@ -745,8 +776,8 @@ async function renderFiles() {
                             </div>
 
                             ${escapeHTML(
-                    file.title
-                )}
+                                file.title
+                            )}
 
                         </div>
 
@@ -758,8 +789,8 @@ async function renderFiles() {
                         <span class="badge">
 
                             ${escapeHTML(
-                    file.subject
-                )}
+                                file.subject
+                            )}
 
                         </span>
 
@@ -769,8 +800,8 @@ async function renderFiles() {
                     <td>
 
                         ${escapeHTML(
-                    file.uploadedBy
-                )}
+                            file.uploadedBy
+                        )}
 
                     </td>
 
@@ -778,8 +809,8 @@ async function renderFiles() {
                     <td>
 
                         ${formatDate(
-                    file.date
-                )}
+                            file.date
+                        )}
 
                     </td>
 
@@ -787,8 +818,8 @@ async function renderFiles() {
                     <td>
 
                         ${Number(
-                    file.size
-                ).toFixed(2)} MB
+                            file.size
+                        ).toFixed(2)} MB
 
                     </td>
 
@@ -1048,9 +1079,16 @@ async function handleUpload(event) {
 
     catch (error) {
 
+        console.error(
+            "Upload error:",
+            error
+        );
+
+
         showMessage(
             message,
-            error.message,
+            error.message ||
+            "Upload failed.",
             "error"
         );
 
@@ -1091,8 +1129,8 @@ function showSelectedFile(event) {
         <i class="bi bi-check-circle"></i>
 
         ${escapeHTML(
-        file.name
-    )}
+            file.name
+        )}
 
         (${size} MB)
 
@@ -1137,7 +1175,9 @@ async function deleteFile(id) {
             await fetch(
                 `${API_URL}/api/files/${id}`,
                 {
+
                     method: "DELETE"
+
                 }
             );
 
@@ -1164,8 +1204,15 @@ async function deleteFile(id) {
 
     catch (error) {
 
+        console.error(
+            "Delete error:",
+            error
+        );
+
+
         alert(
-            error.message
+            error.message ||
+            "Delete failed."
         );
 
     }
