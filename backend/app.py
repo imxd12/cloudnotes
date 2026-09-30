@@ -1,12 +1,40 @@
 from flask import (
     Flask,
     request,
+    redirect,
     jsonify,
     send_from_directory,
     send_file
 )
 
 from flask_cors import CORS
+import jwt
+import os
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+
+def get_current_user():
+    auth_header = request.headers.get("Authorization")
+
+    token = None
+
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1]
+
+    if not token:
+        token = request.cookies.get("cloudnotes_token")
+
+    if not token:
+        return None
+
+    try:
+        return jwt.decode(
+            token,
+            JWT_SECRET_KEY,
+            algorithms=["HS256"]
+        )
+    except jwt.InvalidTokenError:
+        return None
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from pathlib import Path
 from datetime import datetime
@@ -27,7 +55,7 @@ from database import (
 
 app = Flask(__name__)
 
-CORS(app)
+CORS(app, origins=["http://52.66.133.0"])
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -102,8 +130,123 @@ def health():
 
 
 # ==========================================
+# REGISTER
+# ==========================================
+
+@app.route(
+    "/api/register",
+    methods=["POST"]
+)
+def register():
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "success": False,
+            "message": "Request data is missing"
+        }), 400
+
+    name = data.get("name", "").strip()
+    email = data.get("email", "").strip().lower()
+    password = data.get("password", "")
+
+    if not name or not email or not password:
+        return jsonify({
+            "success": False,
+            "message": "Name, email and password are required"
+        }), 400
+
+    if "@" not in email or "." not in email.split("@")[-1]:
+        return jsonify({
+            "success": False,
+            "message": "Enter a valid email address"
+        }), 400
+
+    if len(password) < 6:
+        return jsonify({
+            "success": False,
+            "message": "Password must be at least 6 characters"
+        }), 400
+
+    connection = get_db()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT id FROM users WHERE email = ?",
+        (email,)
+    )
+
+    existing_user = cursor.fetchone()
+
+    if existing_user:
+        connection.close()
+        return jsonify({
+            "success": False,
+            "message": "An account with this email already exists"
+        }), 409
+
+    hashed_password = generate_password_hash(password)
+
+    cursor.execute("""
+        INSERT INTO users (name, email, password)
+        VALUES (?, ?, ?)
+    """, (
+        name,
+        email,
+        hashed_password
+    ))
+
+    user_id = cursor.lastrowid
+    connection.commit()
+    connection.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Account created successfully",
+        "user": {
+            "id": user_id,
+            "name": name,
+            "email": email
+        }
+    }), 201
+
+
+# ==========================================
 # LOGIN
 # ==========================================
+
+
+# ==========================================
+# PROTECTED FRONTEND PAGES
+# ==========================================
+
+def serve_protected_page(filename):
+    current_user = get_current_user()
+
+    if not current_user:
+        return redirect("/index.html")
+
+    return send_from_directory(
+        "/home/ubuntu/cloudnotes/frontend",
+        filename
+    )
+
+
+@app.route("/dashboard.html")
+def protected_dashboard_page():
+    return serve_protected_page("dashboard.html")
+
+
+@app.route("/files.html")
+def protected_files_page():
+    return serve_protected_page("files.html")
+
+
+@app.route("/upload.html")
+def protected_upload_page():
+    return serve_protected_page("upload.html")
+
 
 @app.route(
     "/api/login",
@@ -140,13 +283,11 @@ def login():
 
 
     cursor.execute("""
-        SELECT id, name, email
+        SELECT id, name, email, password
         FROM users
         WHERE email = ?
-        AND password = ?
     """, (
         email,
-        password
     ))
 
 
@@ -155,7 +296,7 @@ def login():
     connection.close()
 
 
-    if user is None:
+    if user is None or not check_password_hash(user["password"], password):
 
         return jsonify({
             "success": False,
@@ -163,30 +304,71 @@ def login():
         }), 401
 
 
-    return jsonify({
+    token = jwt.encode(
+        {
+            "user_id": user["id"],
+            "email": user["email"]
+        },
+        JWT_SECRET_KEY,
+        algorithm="HS256"
+    )
 
+    response = jsonify({
         "success": True,
-
         "message": "Login successful",
-
+        "token": token,
         "user": {
             "id": user["id"],
             "name": user["name"],
             "email": user["email"]
         }
-
     })
+
+    response.set_cookie(
+        "cloudnotes_token",
+        token,
+        httponly=True,
+        samesite="Lax",
+        secure=False,
+        max_age=86400
+    )
+
+    return response
+
+
+
+# ==========================================
+# LOGOUT
+# ==========================================
+
+@app.route("/api/logout", methods=["POST"])
+def logout():
+    response = jsonify({
+        "success": True,
+        "message": "Logged out successfully"
+    })
+
+    response.delete_cookie(
+        "cloudnotes_token",
+        samesite="Lax"
+    )
+
+    return response
 
 
 # ==========================================
 # GET ALL FILES
 # ==========================================
 
-@app.route(
-    "/api/files",
-    methods=["GET"]
-)
+@app.route("/api/files", methods=["GET"])
 def get_files():
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({
+            "success": False,
+            "message": "Authentication required"
+        }), 401
 
     connection = get_db()
 
@@ -196,8 +378,9 @@ def get_files():
     cursor.execute("""
         SELECT *
         FROM files
+        WHERE uploaded_by = ?
         ORDER BY upload_date DESC
-    """)
+    """, (str(current_user["user_id"]),))
 
 
     rows = cursor.fetchall()
@@ -251,6 +434,11 @@ def get_files():
     methods=["POST"]
 )
 def upload_file():
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({"success": False, "message": "Authentication required"}), 401
+
 
     title = request.form.get(
         "title",
@@ -270,10 +458,7 @@ def upload_file():
     ).strip()
 
 
-    uploaded_by = request.form.get(
-        "uploadedBy",
-        "Imad Khan"
-    ).strip()
+    uploaded_by = str(current_user["user_id"])
 
 
     file = request.files.get(
@@ -457,11 +642,15 @@ def upload_file():
 # DOWNLOAD FILE
 # ==========================================
 
-@app.route(
-    "/api/files/<int:file_id>/download",
-    methods=["GET"]
-)
+@app.route("/api/files/<int:file_id>/download", methods=["GET"])
 def download_file(file_id):
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({
+            "success": False,
+            "message": "Authentication required"
+        }), 401
 
     connection = get_db()
 
@@ -472,8 +661,10 @@ def download_file(file_id):
         SELECT *
         FROM files
         WHERE id = ?
+        AND uploaded_by = ?
     """, (
         file_id,
+        str(current_user["user_id"]),
     ))
 
 
@@ -509,11 +700,17 @@ def download_file(file_id):
 # DELETE FILE
 # ==========================================
 
-@app.route(
-    "/api/files/<int:file_id>",
-    methods=["DELETE"]
-)
+@app.route("/api/files/<int:file_id>", methods=["DELETE"])
+
 def delete_file(file_id):
+
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({
+            "success": False,
+            "message": "Authentication required"
+        }), 401
 
     connection = get_db()
 
@@ -524,8 +721,10 @@ def delete_file(file_id):
         SELECT stored_filename
         FROM files
         WHERE id = ?
+        AND uploaded_by = ?
     """, (
         file_id,
+        str(current_user["user_id"]),
     ))
 
 
@@ -550,8 +749,10 @@ def delete_file(file_id):
     cursor.execute("""
         DELETE FROM files
         WHERE id = ?
+        AND uploaded_by = ?
     """, (
         file_id,
+        str(current_user["user_id"]),
     ))
 
 
@@ -589,6 +790,14 @@ def delete_file(file_id):
     methods=["GET"]
 )
 def dashboard():
+
+    current_user = get_current_user()
+
+    if not current_user:
+        return jsonify({
+            "success": False,
+            "message": "Authentication required"
+        }), 401
 
     connection = get_db()
 

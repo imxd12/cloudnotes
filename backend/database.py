@@ -1,5 +1,6 @@
 import sqlite3
 from pathlib import Path
+from werkzeug.security import generate_password_hash
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -66,7 +67,7 @@ def initialize_database():
         """, (
             "Imad Khan",
             "admin@cloudnotes.com",
-            "admin123"
+            generate_password_hash("admin123")
         ))
 
     connection.commit()

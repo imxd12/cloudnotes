@@ -3,8 +3,26 @@
 ========================================= */
 
 
-const API_URL =
-    "";
+const API_URL = "";
+
+// Protect authenticated pages
+(function protectPages() {
+    const protectedPages = [
+        "dashboard.html",
+        "files.html",
+        "upload.html"
+    ];
+
+    const currentPage = window.location.pathname.split("/").pop();
+
+    if (protectedPages.includes(currentPage)) {
+        const token = sessionStorage.getItem("cloudnotes_token");
+
+        if (!token) {
+            window.location.replace("index.html");
+        }
+    }
+})();
 
 
 /* =========================================
@@ -24,6 +42,11 @@ document.addEventListener(
         const uploadForm =
             document.getElementById(
                 "uploadForm"
+            );
+
+        const registerForm =
+            document.getElementById(
+                "registerForm"
             );
 
 
@@ -48,6 +71,15 @@ document.addEventListener(
             uploadForm.addEventListener(
                 "submit",
                 handleUpload
+            );
+
+        }
+
+        if (registerForm) {
+
+            registerForm.addEventListener(
+                "submit",
+                handleRegister
             );
 
         }
@@ -94,6 +126,85 @@ document.addEventListener(
 
     }
 );
+
+
+/* =========================================
+   REGISTER
+========================================= */
+
+async function handleRegister(event) {
+
+    event.preventDefault();
+
+    const name =
+        document.getElementById("registerName").value.trim();
+
+    const email =
+        document.getElementById("registerEmail").value.trim();
+
+    const password =
+        document.getElementById("registerPassword").value;
+
+    const confirmPassword =
+        document.getElementById("registerConfirmPassword").value;
+
+    const message =
+        document.getElementById("registerMessage");
+
+    if (password !== confirmPassword) {
+
+        message.className = "message error";
+        message.textContent = "Passwords do not match.";
+        return;
+
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/api/register`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    password: password
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.message || "Registration failed"
+            );
+        }
+
+        message.className = "message success";
+        message.textContent =
+            "Account created successfully. Redirecting to login...";
+
+        document.getElementById("registerForm").reset();
+
+        setTimeout(() => {
+            window.location.href = "index.html";
+        }, 1500);
+
+    } catch (error) {
+
+        message.className = "message error";
+        message.textContent =
+            error.message || "Registration failed.";
+
+    }
+
+}
 
 
 /* =========================================
@@ -163,13 +274,15 @@ async function handleLogin(event) {
         }
 
 
-        sessionStorage.setItem(
-            "cloudnotes_user",
-            JSON.stringify(
-                data.user
-            )
-        );
+sessionStorage.setItem(
+    "cloudnotes_user",
+    JSON.stringify(data.user)
+);
 
+sessionStorage.setItem(
+    "cloudnotes_token",
+    data.token
+);
 
         message.className =
             "message success";
@@ -259,18 +372,20 @@ function togglePassword() {
    LOGOUT
 ========================================= */
 
-function logout() {
+async function logout() {
+    try {
+        await fetch("/api/logout", {
+            method: "POST"
+        });
+    } catch (error) {
+        console.error("Logout error:", error);
+    }
 
-    sessionStorage.removeItem(
-        "cloudnotes_user"
-    );
+    sessionStorage.removeItem("cloudnotes_user");
+    sessionStorage.removeItem("cloudnotes_token");
 
-
-    window.location.href =
-        "index.html";
-
+    window.location.replace("index.html");
 }
-
 
 /* =========================================
    GET CURRENT USER
@@ -320,11 +435,17 @@ async function updateDashboard() {
 
     try {
 
-        const response =
-            await fetch(
-                `${API_URL}/api/dashboard`
-            );
+const token = sessionStorage.getItem("cloudnotes_token");
 
+const response =
+    await fetch(
+        `${API_URL}/api/dashboard`,
+        {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        }
+    );
 
         const data =
             await response.json();
@@ -424,11 +545,17 @@ async function updateDashboard() {
 
 async function getFiles() {
 
-    const response =
-        await fetch(
-            `${API_URL}/api/files`
-        );
+const token = sessionStorage.getItem("cloudnotes_token");
 
+const response =
+    await fetch(
+        `${API_URL}/api/files`,
+        {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        }
+    );
 
     const data =
         await response.json();
@@ -983,18 +1110,21 @@ async function handleUpload(event) {
         );
 
 
-        const response =
-            await fetch(
-                `${API_URL}/api/files`,
-                {
+const token = sessionStorage.getItem("cloudnotes_token");
 
-                    method: "POST",
+const response =
+    await fetch(
+        `${API_URL}/api/files`,
+        {
+            method: "POST",
 
-                    body: formData
+            headers: {
+                "Authorization": `Bearer ${token}`
+            },
 
-                }
-            );
-
+            body: formData
+        }
+    );
 
         const data =
             await response.json();
@@ -1105,12 +1235,53 @@ function showSelectedFile(event) {
    DOWNLOAD
 ========================================= */
 
-function downloadFile(id) {
+async function downloadFile(id) {
 
-    window.open(
-        `${API_URL}/api/files/${id}/download`,
-        "_blank"
-    );
+    const token = sessionStorage.getItem("cloudnotes_token");
+
+    if (!token) {
+        alert("Please login again.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/api/files/${id}/download`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            alert(data.message || "Download failed.");
+            return;
+        }
+
+        const blob = await response.blob();
+
+        let filename = `cloudnotes-file-${id}.pdf`;
+        const disposition = response.headers.get("Content-Disposition");
+
+        if (disposition) {
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            if (match) {
+                filename = match[1];
+            }
+        }
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error("Download error:", error);
+        alert("Download failed. Please try again.");
+    }
 
 }
 
@@ -1136,9 +1307,12 @@ async function deleteFile(id) {
         const response =
             await fetch(
                 `${API_URL}/api/files/${id}`,
-                {
-                    method: "DELETE"
-                }
+{
+    method: "DELETE",
+    headers: {
+        "Authorization": `Bearer ${sessionStorage.getItem("cloudnotes_token")}`
+    }
+}
             );
 
 
